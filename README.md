@@ -2,9 +2,6 @@
 
 解决 `webpack-der-server vue-cli` 更换 `proxy` 时需要重启服务问题，**避免烦人的重新打包编译耗时**
 
-![image](https://s27.aconvert.com/convert/p3r68-cdx67/z1ex8-q82c8-001.gif)
-
-
 ## 安装
 ```sh
 npm i -D @winches/hmr-proxy
