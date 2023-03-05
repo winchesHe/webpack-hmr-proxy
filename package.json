@@ -1,7 +1,7 @@
 {
   "name": "@winches/hmr-proxy",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.0.9",
   "description": "dynamic change webpack-dev-server proxy without rebuild",
   "author": "winches",
   "license": "MIT",
@@ -52,6 +52,7 @@
   "devDependencies": {
     "@antfu/eslint-config": "^0.35.3",
     "@types/express": "^4.17.17",
+    "@types/lodash": "^4.14.191",
     "@types/node": "^18.7.18",
     "eslint": "^8.23.1",
     "esno": "^0.16.3",
@@ -72,8 +73,9 @@
     ]
   },
   "dependencies": {
-    "chalk": "^5.2.0",
+    "chalk": "^4.1.2",
     "chokidar": "^3.5.3",
-    "http-proxy-middleware": "^2.0.6"
+    "http-proxy-middleware": "^2.0.6",
+    "lodash": "^4.17.21"
   }
 }

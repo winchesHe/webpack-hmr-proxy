@@ -6,6 +6,7 @@ import chokidar from 'chokidar'
 import chalk from 'chalk'
 import type { Options } from 'http-proxy-middleware'
 import { createProxyMiddleware } from 'http-proxy-middleware'
+import { isMatch } from 'lodash'
 
 const runDir = process.cwd()
 function getFilePath() {
@@ -23,28 +24,40 @@ function getFilePath() {
   // 优先自定义 proxy 规则，然后 webpack -> vue
   return validPath('proxy') ?? validPath('webpack') ?? validPath('vue') ?? ''
 }
+type ProxyConfig = Record<string, Options>
+export interface ProxyOptions {
+  path: string
+  showProxy?: string
+}
 
 export class HmrProxy {
   private app: Application
   private filePath: string
+  private initialProxyConfig: ProxyConfig
   private middlewareStartIndex = 0
   private middlewareEndIndex = 0
   private middlewareLength = 0
   private watchFile = new Set<string>()
   private watcher: chokidar.FSWatcher
+  private proxyOptions?: ProxyOptions
 
-  constructor(app: Application, options?: { path: string }) {
+  constructor(app: Application, options?: ProxyOptions) {
     this.app = app
     this.filePath = options?.path ?? getFilePath()
+    this.proxyOptions = options
 
     if (!this.filePath) {
       console.log(chalk.redBright(`The proxy file at \`${this.filePath}\` is not found.`))
       process.exit(1)
     }
+    // 初始化配置文件
+    this.initialProxyConfig = this.getProxyConfig()
     // 初始化监听文件
     this.watchFile = this.collectDeps()
     // 初始化监听器
     this.watcher = chokidar.watch(Array.from(this.watchFile.values()))
+    // 避免回调函数丢失this
+    this.watcherCallback = this.watcherCallback.bind(this)
   }
 
   // 收集文件依赖模块及其缓存
@@ -52,21 +65,14 @@ export class HmrProxy {
     const deps: Set<string> = new Set<string>([this.filePath])
     // 运行文件制造缓存
     require(this.filePath)
-    const walkDeps = (modules: NodeModule[]) => {
-      modules.forEach((md) => {
-        deps.add(md.id)
-        if (md.children.length)
-          walkDeps(md.children)
-      })
-    }
-    // 收集缓存
-    walkDeps(require.cache[this.filePath]?.children || [])
+    const cachePath = require.cache[require.resolve(this.filePath)]!
+    deps.add(cachePath.id)
     return deps
   }
 
-  async run() {
+  run() {
     // 注册中间件
-    await this.registerRoutes()
+    this.registerRoutes()
     // 启用监听器监听配置文件, 当文件变更，添加，移除时除非回调，更新proxy
     try {
       this.watcher.on('change', this.watcherCallback)
@@ -85,9 +91,14 @@ export class HmrProxy {
     return Object.assign({}, options, customOptions)
   }
 
-  async registerRoutes() {
+  getProxyConfig(): ProxyConfig {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    return (require(this.filePath)).devServer.proxy
+  }
+
+  registerRoutes() {
     // 获取proxy配置
-    const localProxy: Record<string, Options> = (await import(this.filePath)).devServer.proxy
+    const localProxy: ProxyConfig = this.getProxyConfig()
 
     Object.entries(localProxy).forEach(([context, customOptions]) => {
       const options = this.createOptions(customOptions)
@@ -106,11 +117,12 @@ export class HmrProxy {
     // 移除已注册路由
     this.app._router.stack.splice(this.middlewareStartIndex, this.middlewareEndIndex)
     // 清理缓存
+    this.cleanDeps()
+  }
+
+  cleanDeps() {
     this.watchFile.forEach((watchFile) => {
-      Object.keys(require.cache).forEach((i) => {
-        if (i.includes(watchFile))
-          delete require.cache[require.resolve(i)]
-      })
+      delete require.cache[require.resolve(watchFile)]
     })
   }
 
@@ -129,13 +141,24 @@ export class HmrProxy {
     })
   }
 
-  async watcherCallback(path: string) {
-    // 删除旧的代理配置
-    this.unRegisterRoutes()
-    // 重新收集依赖模块
-    this.recollectDeps()
-    // 重新注册新的代理配置
-    await this.registerRoutes()
-    console.log(chalk.magentaBright(`\n > Proxy Server hot reload success! ${path}`))
+  watcherCallback(path: string) {
+    // 先清理缓存再require
+    this.cleanDeps()
+    const newProxyConfig = this.getProxyConfig()
+    const logProxy = this.proxyOptions?.showProxy ? { proxy: newProxyConfig } : ''
+    // 当新旧代理配置不一样时重新更新
+    if (!isMatch(this.initialProxyConfig, newProxyConfig)) {
+      // 删除旧的代理配置
+      this.unRegisterRoutes()
+      // 重新收集依赖模块
+      this.recollectDeps()
+      // 重新注册新的代理配置
+      this.registerRoutes()
+      console.log()
+      typeof logProxy === 'object'
+        ? console.log(chalk.magentaBright('> Proxy Server hot reload success!'), logProxy)
+        : console.log(chalk.magentaBright('> Proxy Server hot reload success!'))
+      console.log(chalk.magentaBright(`> loaded path: ${path}`))
+    }
   }
 }
