@@ -1,5 +1,5 @@
 {
-  "name": "@winches/hot-proxy",
+  "name": "@winches/hmr-proxy",
   "type": "module",
   "version": "0.0.1",
   "description": "dynamic change webpack-dev-server proxy without rebuild",
@@ -7,17 +7,17 @@
   "license": "MIT",
   "keywords": [
     "webpack-dev-server",
-    "proxy",
+    "hmr-proxy",
     "dynamic",
     "webpack",
-    "quickly"
+    "vue-cli"
   ],
   "sideEffects": false,
   "scripts": {
     "prepublishOnly": "npm run build",
     "prepare": "simple-git-hooks",
     "dev": "tsup --watch",
-    "build": "tsup --minify",
+    "build": "tsup-node",
     "lint": "eslint --cache --ext ts,tsx,vue .",
     "release": "npm publish",
     "start": "esno src/index.ts",
