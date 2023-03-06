@@ -28,7 +28,7 @@ type ProxyConfig = Record<string, Options>
 export interface ProxyOptions {
   path: string
   showProxy?: string
-  middleware?: any[]
+  middlewares?: any[]
 }
 
 export class HmrProxy {
@@ -95,8 +95,8 @@ export class HmrProxy {
   }
 
   cleanHttpMiddleware() {
-    if (this.proxyOptions?.middleware) {
-      this.proxyOptions.middleware = this.proxyOptions.middleware.filter(i => i.name !== 'http-proxy-middleware')
+    if (this.proxyOptions?.middlewares) {
+      this.proxyOptions.middlewares = this.proxyOptions.middlewares.filter(i => i.name !== 'http-proxy-middleware')
     }
     else {
       const firstIndex = this.app._router.stack.findIndex((i: any) => i.name === 'webpackDevMiddleware')
