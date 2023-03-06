@@ -28,6 +28,7 @@ type ProxyConfig = Record<string, Options>
 export interface ProxyOptions {
   path: string
   showProxy?: string
+  middleware?: any[]
 }
 
 export class HmrProxy {
@@ -71,6 +72,8 @@ export class HmrProxy {
   }
 
   run() {
+    // 取消http中间件
+    this.cleanHttpMiddleware()
     // 注册中间件
     this.registerRoutes()
     // 启用监听器监听配置文件, 当文件变更，添加，移除时除非回调，更新proxy
@@ -89,6 +92,18 @@ export class HmrProxy {
       logLevel: 'silent',
     }
     return Object.assign({}, options, customOptions)
+  }
+
+  cleanHttpMiddleware() {
+    if (this.proxyOptions?.middleware) {
+      this.proxyOptions.middleware = this.proxyOptions.middleware.filter(i => i.name !== 'http-proxy-middleware')
+    }
+    else {
+      const firstIndex = this.app._router.stack.findIndex((i: any) => i.name === 'webpackDevMiddleware')
+      const lastIndex = this.app._router.stack.findIndex((i: any, index: number) => i.name === 'webpackDevMiddleware' && index !== firstIndex)
+      if (firstIndex !== -1 && lastIndex !== -1)
+        this.app._router.stack.splice(firstIndex, lastIndex + 1)
+    }
   }
 
   getProxyConfig(): ProxyConfig {
