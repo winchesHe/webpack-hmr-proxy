@@ -74,7 +74,7 @@ module.exports = {
           throw new Error('webpack-dev-server is not defined');
         }
 
-        useHmrProxy(devServer.app)
+        useHmrProxy(devServer.app, { middlewares })
         return middlewares
       }
     },
