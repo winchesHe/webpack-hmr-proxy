@@ -1,7 +1,7 @@
 {
   "name": "@winches/hmr-proxy",
   "type": "module",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "dynamic change webpack-dev-server proxy without rebuild",
   "author": "winches",
   "license": "MIT",
@@ -31,7 +31,7 @@
       "import": "./dist/index.mjs"
     }
   },
-  "main": "./dist/index.mjs",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "typesVersions": {
