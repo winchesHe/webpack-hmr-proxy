@@ -102,7 +102,7 @@ export class HmrProxy {
       const firstIndex = this.app._router.stack.findIndex((i: any) => i.name === 'webpackDevMiddleware')
       const lastIndex = this.app._router.stack.findIndex((i: any, index: number) => i.name === 'webpackDevMiddleware' && index !== firstIndex)
       if (firstIndex !== -1 && lastIndex !== -1)
-        this.app._router.stack.splice(firstIndex, lastIndex + 1)
+        this.app._router.stack.splice(firstIndex + 1, lastIndex - 1)
     }
   }
 
